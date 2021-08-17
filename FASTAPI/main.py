@@ -127,7 +127,7 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.get("/verify/{email}")
+@app.get("/provName/{email}")
 def check_dom(email: str):
     splitAddress = email.split('@')
     domain = str(splitAddress[1])
