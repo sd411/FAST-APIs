@@ -29,6 +29,10 @@ def check_dom(email: str):
         prov = "Google"
     elif "microsoft" in mxRecord or "outlook" in mxRecord:
         prov = "Microsoft"
+    elif "icloud" in mxRecord:
+        prov = "Apple"
+    elif "zoho" in mxRecord:
+        prov = "Zoho"
     else:
         prov = "Others"
 
