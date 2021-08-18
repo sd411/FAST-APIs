@@ -6,6 +6,7 @@ import smtplib
 import dns.resolver
 import json
 import requests
+import re
 app = FastAPI()
 
 
@@ -121,6 +122,111 @@ def check_validity(email):
             msg = "invalid"
         
         return msg
+    
+    
+    
+def get_people(company,keywords,li_at,num_pages = 1):
+    headers = {"user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36",
+           }
+    
+    with requests.session() as s:
+                                    res = s.get("https://www.linkedin.com/feed/?trk=guest_homepage-basic_nav-header-signin") 
+                                    jid = s.cookies["JSESSIONID"]
+                                    s.cookies['li_at'] = li_at
+                                    s.cookies["JSESSIONID"] = jid
+                                    s.headers = headers
+                                    s.headers["csrf-token"] = jid.strip('"')
+                                    params = {
+                                                "decorationId": "com.linkedin.voyager.deco.organization.web.WebFullCompanyMain-12",
+                                                "q": "universalName",
+                                                "universalName": company,
+                                            }
+                                    response = s.get("https://www.linkedin.com/voyager/api/organization/companies", params=params)
+                                    response_dict2 = response.json()
+    
+    cmpny_urn = response_dict2["elements"][0]["entityUrn"].split(":")[-1]
+    keys = "%20".join(keywords.split(" "))
+    
+    
+    sd = set([])
+    for i in range(1,num_pages+1):
+        url = f'https://www.linkedin.com/search/results/people/?currentCompany=%5B%22{cmpny_urn}%22%5D&origin=FACETED_SEARCH&sid=S%3B.&title={keys}&page={i}'
+        print(url)
+        with requests.session() as s:
+                    res = s.get("https://www.linkedin.com/feed/?trk=guest_homepage-basic_nav-header-signin") 
+                    jid = s.cookies["JSESSIONID"]
+                    s.cookies['li_at'] = li_at
+                    s.cookies["JSESSIONID"] = jid
+                    s.headers = headers
+                    s.headers["csrf-token"] = jid.strip('"')
+                    #default_params = {"filters":["resultType->COMPANIES"],"keywords":"internet","origin":"SWITCH_SEARCH_VERTICAL","searchId":"fbc2a217-50cd-4252-99f3-6a94650241ba"}
+                    response = s.get(url, headers=headers)
+    
+        s = response.text
+        sd1 = re.findall(r"https://www.linkedin.com/in/[a-z0-9_-]+",s)
+        if(len(sd1)==0):
+            break
+        for item in sd1:
+            sd.add(item)
+    print(sd)
+    print(f"Found {len(sd)} profiles from your url :")
+    print("-----------------------------------------------------------------------------------------------------")
+    result = []
+    for item in sd:
+        try:
+            
+            
+            ul = item
+            with requests.session() as s:
+                                            res = s.get("https://www.linkedin.com/feed/?trk=guest_homepage-basic_nav-header-signin") 
+                                            jid = s.cookies["JSESSIONID"]
+                                            s.cookies['li_at'] = li_at
+                                            s.cookies["JSESSIONID"] = jid
+                                            s.headers = headers
+                                            s.headers["csrf-token"] = jid.strip('"')
+                                            url = ul.split("/")[4]
+                                            res3 = s.get(f"https://www.linkedin.com/voyager/api/identity/profiles/{url}/profileView")
+                                            data = res3.json()
+                                    
+            urnid = data["positionGroupView"]["elements"][0]["miniCompany"]["entityUrn"]
+
+            urn = urnid.split(":")[-1]
+            company_link = 'https://www.linkedin.com/voyager/api/entities/companies/' + str(urn)
+            with requests.session() as s:
+                            res = s.get("https://www.linkedin.com/feed/?trk=guest_homepage-basic_nav-header-signin") 
+                            jid = s.cookies["JSESSIONID"]
+                            s.cookies['li_at'] = li_at
+                            s.cookies["JSESSIONID"] = jid
+                            s.headers = headers
+                            s.headers["csrf-token"] = jid.strip('"')
+                            response = s.get(company_link)
+                            response_dict = response.json()
+            
+            try:
+                website_url = response_dict["websiteUrl"]
+            except:
+                website_url = "NA"    
+            
+            
+            
+            
+            
+            
+            name = data["profile"]["miniProfile"]["firstName"] +" "+ data["profile"]["miniProfile"]["lastName"]
+            location = data["profile"]["geoCountryName"]
+            tagline = data["profile"]["headline"]
+            url2 = ul
+            company_url = "https://www.linkedin.com/company/" + str(urn)
+            company_name = response_dict["basicCompanyInfo"]["miniCompany"]["name"]
+            print(f"Name: {name}\nURL : {url2}\nLocation: {location}\nTagline : {tagline}\nLatest Company: {company_name}\nCompany_url: {company_url}\nWebsite_url: {website_url}")
+            print("\n--------------------------------------------------------------------------\n")
+            result.append({"Name": name,"URL" : url2,"Location": location,"Tagline" : tagline,"Recent Company": company_name,"Company URL" : company_url,"Website URL" : website_url})
+        
+        except:
+            pass
+    
+    return result
+
 
 @app.get("/")
 def read_root():
@@ -159,3 +265,13 @@ def get_e(fn : str,ln : str,domain : str):
 @app.get("/checkValidity/{email}")
 def get_vdty(email: str):
     return check_validity(email)
+
+@app.post("/getpeoplelist/")
+def get_p(request: Request):
+    data = request.json()
+    keys = data["keys"]
+    cookie = data["cookie"]
+    company = data["company"]
+    num = data["num_pages"]
+    return json.dumps(get_people(company,keys,cookie,num))
+    
