@@ -150,7 +150,10 @@ def get_people(company,keywords,li_at,num_pages = 1):
     
     sd = set([])
     for i in range(1,num_pages+1):
-        url = f'https://www.linkedin.com/search/results/people/?currentCompany=%5B%22{cmpny_urn}%22%5D&origin=FACETED_SEARCH&sid=S%3B.&title={keys}&page={i}'
+        if len(keys) > 1:
+            url = f'https://www.linkedin.com/search/results/people/?currentCompany=%5B%22{cmpny_urn}%22%5D&origin=FACETED_SEARCH&sid=S%3B.&page={i}'
+        else:
+            url = f'https://www.linkedin.com/search/results/people/?currentCompany=%5B%22{cmpny_urn}%22%5D&origin=FACETED_SEARCH&sid=S%3B.&title={keys}&page={i}'
         print(url)
         with requests.session() as s:
                     res = s.get("https://www.linkedin.com/feed/?trk=guest_homepage-basic_nav-header-signin") 
