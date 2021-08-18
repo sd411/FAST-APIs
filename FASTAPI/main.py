@@ -268,7 +268,7 @@ def get_vdty(email: str):
 
 @app.post("/getpeoplelist/")
 def get_p(request: Request):
-    data = request.json()
+    data = await request.json()
     keys = data["keys"]
     cookie = data["cookie"]
     company = data["company"]
