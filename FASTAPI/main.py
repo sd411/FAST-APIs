@@ -273,5 +273,5 @@ async def get_p(request: Request):
     cookie = data["cookie"]
     company = data["company"]
     num = data["num_pages"]
-    return json.dumps(get_people(company,keys,cookie,num))
+    return get_people(company,keys,cookie,num)
     
