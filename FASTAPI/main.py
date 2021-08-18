@@ -267,7 +267,7 @@ def get_vdty(email: str):
     return check_validity(email)
 
 @app.post("/getpeoplelist/")
-def get_p(request: Request):
+async def get_p(request: Request):
     data = await request.json()
     keys = data["keys"]
     cookie = data["cookie"]
