@@ -276,7 +276,7 @@ def get_vdty(email: str):
     mxRecord = records[0].exchange
     mxRecord = str(mxRecord)
     if "google" in mxRecord or "microsoft" in mxRecord or "zoho" in mxRecord:
-        resp = requests.post("https://scraping-api.ringover-automations.xyz/email/validity",json = {"email" : wmail})
+        resp = requests.post("https://scraping-api.ringover-automations.xyz/email/validity",json = {"email" : email})
         sd = json.loads(resp)
         if sd["valid"]:
             return "valid"
