@@ -267,6 +267,23 @@ def get_e(fn : str,ln : str,domain : str):
 
 @app.get("/checkValidity/{email}")
 def get_vdty(email: str):
+    splitAddress = email.split('@')
+    domain = str(splitAddress[1])
+    print('Domain:', domain)
+    
+    # MX record lookup
+    records = dns.resolver.resolve(domain, 'MX')
+    mxRecord = records[0].exchange
+    mxRecord = str(mxRecord)
+    if "google" in mxRecord or "microsoft" in mxRecord or "zoho" in mxRecord:
+        resp = requests.post("https://scraping-api.ringover-automations.xyz/email/validity",json = {"email" : wmail})
+        sd = json.loads(resp)
+        if sd["valid"]:
+            return "valid"
+        else:
+            return "invalid"
+    
+    
     return check_validity(email)
 
 @app.post("/getpeoplelist/")
